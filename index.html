@@ -1,1 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Design Studio</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Load Fabric.js from a CDN -->
+    <script src="https://cdnjs.cloudflare.com"></script>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="addText()">Add Text</button>
+        <input type="file" id="upload" accept="image/*">
+        <button onclick="deleteSelected()">Delete Selected</button>
+    </div>
+    
+    <!-- This is your actual design area -->
+    <canvas id="canvas" width="600" height="400"></canvas>
+
+    <script src="script.js"></script>
+</body>
+</html>
 
