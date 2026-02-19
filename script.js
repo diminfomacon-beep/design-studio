@@ -69,5 +69,26 @@ function displayResults(images) {
         container.appendChild(thumb);
     });
 }
+function downloadDesign() {
+    // 1. Deselect everything so the "selection boxes" don't show up in the print
+    canvas.discardActiveObject();
+    canvas.renderAll();
+
+    // 2. Convert canvas to a high-res Data URL (PNG)
+    const dataURL = canvas.toDataURL({
+        format: 'png',
+        quality: 1.0,
+        multiplier: 2 // This doubles the resolution for better print quality
+    });
+
+    // 3. Create a temporary link to "click" and trigger download
+    const link = document.createElement('a');
+    link.download = 'custom-design.png';
+    link.href = dataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 
 
