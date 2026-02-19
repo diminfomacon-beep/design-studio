@@ -2,26 +2,93 @@
 <html>
 <head>
     <title>Design Studio</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f4f4; padding: 20px; }
+        .controls { margin-bottom: 10px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        #canvas-container { border: 2px solid #333; background-color: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        #searchResults { display: flex; gap: 10px; margin: 10px 0; overflow-x: auto; max-width: 600px; padding: 10px; background: #ddd; border-radius: 5px; min-height: 50px; }
+        button { cursor: pointer; padding: 8px 12px; border: none; border-radius: 4px; background: #007bff; color: white; }
+        button:hover { background: #0056b3; }
+        .delete-btn { background: #dc3545; }
+    </style>
+    <!-- We load Fabric.js in the HEAD to ensure it is defined before the script runs -->
     <script src="https://cdnjs.cloudflare.com"></script>
 </head>
 <body>
 
-    <!-- 1. ADDED: New search and control bar -->
     <div class="controls">
-        <input type="text" id="imageSearch" placeholder="Search Unsplash photos...">
-        <button onclick="searchUnsplash()">Search Images</button>
+        <input type="text" id="imageSearch" placeholder="Search Unsplash...">
+        <button onclick="searchUnsplash()">Search</button>
         <button onclick="addText()">Add Text</button>
-        <button onclick="deleteSelected()" style="color: red;">Delete Selected</button>
-        <button onclick="downloadDesign()" style="background-color: #4CAF50; color: white;">Download for Print</button>
+        <button onclick="deleteSelected()" class="delete-btn">Delete</button>
+        <button onclick="downloadDesign()" style="background: #28a745;">Download PNG</button>
     </div>
     
-    <!-- 2. ADDED: This container holds the images that pop up after searching -->
-    <div id="searchResults"></div>
+    <div id="searchResults">Search for an image to see results here...</div>
 
-    <!-- 3. EXISTING: Your design area -->
-    <canvas id="canvas" width="600" height="400"></canvas>
+    <div id="canvas-container">
+        <canvas id="canvas" width="600" height="400"></canvas>
+    </div>
 
-    <script src="script.js"></script>
+    <script>
+        // Use your actual key here
+        const UNSPLASH_KEY = 'YOUR_ACTUAL_ACCESS_KEY_HERE';
+
+        // Wait for Fabric to be ready
+        const canvas = new fabric.Canvas('canvas');
+
+        function addText() {
+            const text = new fabric.IText('Double click to edit', {
+                left: 100, top: 100, fontFamily: 'Arial', fontSize: 24
+            });
+            canvas.add(text);
+        }
+
+        async function searchUnsplash() {
+            const query = document.getElementById('imageSearch').value;
+            const url = `https://api.unsplash.com{query}&client_id=${UNSPLASH_KEY}&per_page=8`;
+            
+            const container = document.getElementById('searchResults');
+            container.innerHTML = 'Loading...';
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                container.innerHTML = ''; // Clear loading text
+
+                data.results.forEach(img => {
+                    const thumb = document.createElement('img');
+                    thumb.src = img.urls.thumb;
+                    thumb.style.height = "80px";
+                    thumb.style.cursor = "pointer";
+                    thumb.onclick = () => {
+                        fabric.Image.fromURL(img.urls.regular, function(fImg) {
+                            fImg.scaleToWidth(200);
+                            canvas.add(fImg);
+                            canvas.centerObject(fImg);
+                            canvas.renderAll();
+                        }, { crossOrigin: 'anonymous' });
+                    };
+                    container.appendChild(thumb);
+                });
+            } catch (err) {
+                container.innerHTML = 'Error fetching images. Check API key.';
+                console.error(err);
+            }
+        }
+
+        function deleteSelected() {
+            canvas.getActiveObjects().forEach(obj => canvas.remove(obj));
+            canvas.discardActiveObject().renderAll();
+        }
+
+        function downloadDesign() {
+            canvas.discardActiveObject().renderAll();
+            const link = document.createElement('a');
+            link.download = 'design.png';
+            link.href = canvas.toDataURL({ format: 'png', multiplier: 2 });
+            link.click();
+        }
+    </script>
 </body>
 </html>
