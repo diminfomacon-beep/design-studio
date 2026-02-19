@@ -3,20 +3,24 @@
 <head>
     <title>Design Studio</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Load Fabric.js from a CDN -->
     <script src="https://cdnjs.cloudflare.com"></script>
 </head>
 <body>
+
+    <!-- 1. ADDED: New search and control bar -->
     <div class="controls">
+        <input type="text" id="imageSearch" placeholder="Search Unsplash photos...">
+        <button onclick="searchUnsplash()">Search Images</button>
         <button onclick="addText()">Add Text</button>
-        <input type="file" id="upload" accept="image/*">
-        <button onclick="deleteSelected()">Delete Selected</button>
+        <button onclick="deleteSelected()" style="color: red;">Delete Selected</button>
     </div>
     
-    <!-- This is your actual design area -->
+    <!-- 2. ADDED: This container holds the images that pop up after searching -->
+    <div id="searchResults"></div>
+
+    <!-- 3. EXISTING: Your design area -->
     <canvas id="canvas" width="600" height="400"></canvas>
 
     <script src="script.js"></script>
 </body>
 </html>
-
