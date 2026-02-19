@@ -36,7 +36,7 @@ const UNSPLASH_KEY = 'YOUR_UNSPLASH_ACCESS_KEY';
 
 async function searchUnsplash() {
     const query = document.getElementById('imageSearch').value;
-    const url = `https://api.unsplash.com{query}&client_id=${UNSPLASH_KEY}&per_page=5`;
+    const url = `https://api.unsplash.com{query}&client_id=${Z-a_ubE9NWNeF8tLL7QM4LjHdrIW7_RE0ZHUWAUi_zU}&per_page=5`;
     
     try {
         const response = await fetch(url);
