@@ -2,4 +2,21 @@ body { font-family: sans-serif; display: flex; flex-direction: column; align-ite
 .controls { margin-bottom: 10px; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 #canvas { border: 2px solid #333; background-color: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
 button { cursor: pointer; padding: 8px 12px; margin-right: 5px; }
+#searchResults {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+    overflow-x: auto; /* Allows scrolling if there are many images */
+    padding: 10px;
+    background: #eee;
+    border-radius: 4px;
+    width: 600px;
+}
+#searchResults img {
+    border-radius: 4px;
+    transition: transform 0.2s;
+}
+#searchResults img:hover {
+    transform: scale(1.1); /* Slight zoom when hovering */
+}
 
