@@ -150,7 +150,7 @@ function loadProduct(product){
         img.selectable=false;
         img.evented=false;
         canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-    }):
+    }, { crossOrigin:'anonymous' });
 
     printArea = new fabric.Rect({
         left:product.printArea.left,
