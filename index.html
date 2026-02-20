@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>D.I.M. Bright Ideas – Print Studio</title>
+<title>D.I.M. Bright Ideas – Design Studio</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
 
@@ -29,7 +29,6 @@ header{
     padding:15px;
     box-shadow:0 0 10px rgba(0,0,0,.1);
 }
-.controls h3{margin-bottom:5px;}
 .controls input, .controls select{
     width:100%;
     padding:8px;
@@ -57,7 +56,6 @@ header{
 #canvas-wrap{
     background:white;
     display:inline-block;
-    position:relative;
 }
 </style>
 </head>
@@ -69,6 +67,14 @@ header{
 <div class="container">
 
 <div class="controls">
+
+<h3>Select Product</h3>
+<select id="productSelect" onchange="switchProduct()">
+    <option value="shirt">T-Shirt</option>
+    <option value="tumbler">Tumbler</option>
+    <option value="tote">Tote Bag</option>
+    <option value="mug">Mug</option>
+</select>
 
 <h3>Add Text</h3>
 <input type="text" id="textInput" placeholder="Enter text">
@@ -94,7 +100,7 @@ header{
 
 <div class="canvas-area">
 <div id="canvas-wrap">
-<canvas id="studio" width="600" height="700"></canvas>
+<canvas id="studio" width="700" height="700"></canvas>
 </div>
 </div>
 
@@ -102,46 +108,74 @@ header{
 
 <script>
 
-// 🔥 Replace with your Vercel backend URL
-const BACKEND_URL = "https://design-studio-pii9hp9ib-diminfomacon-3561s-projects.vercel.app";
+const BACKEND_URL = "https://YOUR-VERCEL-APP.vercel.app";
 
 let canvas = new fabric.Canvas('studio', {
     preserveObjectStacking:true
 });
 
-// 👕 Load Shirt Mockup
-fabric.Image.fromURL(
-    "https://i.imgur.com/6X12ZQK.png",
-    function(img){
-        img.scaleToWidth(600);
+let printArea;
+let currentMockup;
+
+const products = {
+    shirt: {
+        mockup: "https://i.imgur.com/6X12ZQK.png",
+        printArea: {left:200, top:250, width:300, height:350}
+    },
+    tumbler: {
+        mockup: "https://i.imgur.com/3ZQ3ZQp.png",
+        printArea: {left:250, top:150, width:200, height:400}
+    },
+    tote: {
+        mockup: "https://i.imgur.com/8Km9tLL.png",
+        printArea: {left:220, top:200, width:260, height:300}
+    },
+    mug: {
+        mockup: "https://i.imgur.com/NjX7vJt.png",
+        printArea: {left:200, top:280, width:300, height:200}
+    }
+};
+
+function switchProduct(){
+    const selected = document.getElementById("productSelect").value;
+    loadProduct(products[selected]);
+}
+
+function loadProduct(product){
+
+    canvas.clear();
+
+    fabric.Image.fromURL(product.mockup,function(img){
+        img.scaleToWidth(700);
         img.selectable=false;
         img.evented=false;
         canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-    },
-    { crossOrigin: 'anonymous' }
-);
+    }, { crossOrigin:'anonymous' });
 
-// 🎨 Print Area Guide
-const printArea = new fabric.Rect({
-    left:150,
-    top:200,
-    width:300,
-    height:350,
-    fill:"transparent",
-    stroke:"red",
-    strokeDashArray:[5,5],
-    selectable:false,
-    evented:false
-});
-canvas.add(printArea);
+    printArea = new fabric.Rect({
+        left:product.printArea.left,
+        top:product.printArea.top,
+        width:product.printArea.width,
+        height:product.printArea.height,
+        fill:"transparent",
+        stroke:"red",
+        strokeDashArray:[5,5],
+        selectable:false,
+        evented:false
+    });
+
+    canvas.add(printArea);
+}
+
+loadProduct(products.shirt);
 
 // Add Text
 function addText(){
     const text = new fabric.IText(
         document.getElementById("textInput").value || "Your Text",
         {
-            left:200,
-            top:250,
+            left:printArea.left + 20,
+            top:printArea.top + 20,
             fill:document.getElementById("fontColor").value,
             fontSize:parseInt(document.getElementById("fontSize").value)
         }
@@ -151,12 +185,12 @@ function addText(){
 
 // Upload Image
 document.getElementById("upload").addEventListener("change",function(e){
-    const reader = new FileReader();
+    const reader=new FileReader();
     reader.onload=function(f){
         fabric.Image.fromURL(f.target.result,function(img){
-            img.scaleToWidth(250);
-            img.left=200;
-            img.top=300;
+            img.scaleToWidth(200);
+            img.left=printArea.left + 20;
+            img.top=printArea.top + 20;
             canvas.add(img);
         });
     };
@@ -182,17 +216,15 @@ function download(){
     link.click();
 }
 
-// ✂️ Remove Background
+// Remove Background
 async function removeBackground(){
     const obj=canvas.getActiveObject();
     if(!obj || obj.type!=="image") return alert("Select an image");
 
-    const base64=obj._element.src;
-
     const res=await fetch(`${BACKEND_URL}/api/removebg`,{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({image:base64})
+        body:JSON.stringify({image:obj._element.src})
     });
 
     const data=await res.json();
@@ -206,7 +238,7 @@ async function removeBackground(){
     });
 }
 
-// 🎨 AI Generator
+// AI Generator
 async function generateAI(){
     const prompt=document.getElementById("aiPrompt").value;
 
@@ -219,9 +251,9 @@ async function generateAI(){
     const data=await res.json();
 
     fabric.Image.fromURL(data.url,function(img){
-        img.scaleToWidth(300);
-        img.left=200;
-        img.top=300;
+        img.scaleToWidth(250);
+        img.left=printArea.left + 20;
+        img.top=printArea.top + 20;
         canvas.add(img);
     });
 }
