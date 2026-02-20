@@ -2,9 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>D.I.M. Bright Ideas – Design Studio</title>
+<title>D.I.M. Bright Ideas – Print Studio</title>
 
-<!-- Fabric.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
 
 <style>
@@ -25,18 +24,16 @@ header{
     flex-wrap:wrap;
 }
 .controls{
-    width:300px;
+    width:320px;
     background:white;
     padding:15px;
     box-shadow:0 0 10px rgba(0,0,0,.1);
 }
-.controls h3{
-    margin-top:0;
-}
+.controls h3{margin-bottom:5px;}
 .controls input, .controls select{
     width:100%;
     padding:8px;
-    margin-bottom:10px;
+    margin-bottom:8px;
 }
 .controls button{
     width:100%;
@@ -48,8 +45,9 @@ header{
     background:#044499;
     color:white;
 }
-.controls button.red{ background:#ED7800;}
-.controls button.green{ background:#28a745;}
+.controls button.green{background:#28a745;}
+.controls button.orange{background:#ED7800;}
+.controls button.red{background:#c82333;}
 
 .canvas-area{
     flex:1;
@@ -58,17 +56,15 @@ header{
 }
 #canvas-wrap{
     background:white;
-    border:3px solid #333;
     display:inline-block;
+    position:relative;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-D.I.M. Bright Ideas – Custom Print Studio
-</header>
+<header>D.I.M. Bright Ideas – Custom Design Studio</header>
 
 <div class="container">
 
@@ -76,43 +72,29 @@ D.I.M. Bright Ideas – Custom Print Studio
 
 <h3>Add Text</h3>
 <input type="text" id="textInput" placeholder="Enter text">
-<select id="fontSelect">
-<option value="Arial">Arial</option>
-<option value="Impact">Impact</option>
-<option value="Times New Roman">Times New Roman</option>
-<option value="Courier New">Courier New</option>
-</select>
-<input type="number" id="fontSize" value="40">
 <input type="color" id="fontColor" value="#000000">
+<input type="number" id="fontSize" value="40">
 <button onclick="addText()">Add Text</button>
 
 <h3>Upload Logo</h3>
 <input type="file" id="upload" accept="image/*">
-<h3>Search Graphics</h3>
-<input type="text" id="imageQuery" placeholder="Search images...">
-<select id="imageSource">
-  <option value="unsplash">Unsplash</option>
-  <option value="pexels">Pexels</option>
-</select>
-<button onclick="searchImages()">Search</button>
 
-<div id="imageResults" style="display:flex;flex-wrap:wrap;gap:5px;max-height:200px;overflow:auto;"></div>
-<h3>Layers</h3>
-<button onclick="bringForward()">Bring Forward</button>
-<button onclick="sendBackward()">Send Backward</button>
+<h3>AI Image Generator</h3>
+<input type="text" id="aiPrompt" placeholder="Describe your design...">
+<button class="orange" onclick="generateAI()">Generate AI Image</button>
 
-<h3>Canvas</h3>
-<input type="color" id="bgColor" value="#ffffff">
-<button onclick="changeBackground()">Change Background</button>
+<h3>Edit Image</h3>
+<button onclick="removeBackground()">Remove Background</button>
+<button onclick="deleteObj()" class="red">Delete Selected</button>
 
-<button class="red" onclick="deleteObj()">Delete Selected</button>
+<h3>Download</h3>
 <button class="green" onclick="download()">Download Design</button>
 
 </div>
 
 <div class="canvas-area">
 <div id="canvas-wrap">
-<canvas id="studio" width="600" height="600"></canvas>
+<canvas id="studio" width="600" height="700"></canvas>
 </div>
 </div>
 
@@ -120,31 +102,61 @@ D.I.M. Bright Ideas – Custom Print Studio
 
 <script>
 
-let canvas = new fabric.Canvas('studio',{
+// 🔥 Replace with your Vercel backend URL
+const BACKEND_URL = "https://YOUR-VERCEL-APP.vercel.app";
+
+let canvas = new fabric.Canvas('studio', {
     preserveObjectStacking:true
 });
+
+// 👕 Load Shirt Mockup
+fabric.Image.fromURL(
+    "https://i.imgur.com/6X12ZQK.png",
+    function(img){
+        img.scaleToWidth(600);
+        img.selectable=false;
+        img.evented=false;
+        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+    },
+    { crossOrigin: 'anonymous' }
+);
+
+// 🎨 Print Area Guide
+const printArea = new fabric.Rect({
+    left:150,
+    top:200,
+    width:300,
+    height:350,
+    fill:"transparent",
+    stroke:"red",
+    strokeDashArray:[5,5],
+    selectable:false,
+    evented:false
+});
+canvas.add(printArea);
 
 // Add Text
 function addText(){
     const text = new fabric.IText(
-        document.getElementById('textInput').value || "Your Text",
+        document.getElementById("textInput").value || "Your Text",
         {
-            left:100,
-            top:100,
-            fontFamily:document.getElementById('fontSelect').value,
-            fill:document.getElementById('fontColor').value,
-            fontSize:parseInt(document.getElementById('fontSize').value)
+            left:200,
+            top:250,
+            fill:document.getElementById("fontColor").value,
+            fontSize:parseInt(document.getElementById("fontSize").value)
         }
     );
     canvas.add(text);
 }
 
 // Upload Image
-document.getElementById('upload').addEventListener('change',function(e){
+document.getElementById("upload").addEventListener("change",function(e){
     const reader = new FileReader();
-    reader.onload = function(f){
+    reader.onload=function(f){
         fabric.Image.fromURL(f.target.result,function(img){
             img.scaleToWidth(250);
+            img.left=200;
+            img.top=300;
             canvas.add(img);
         });
     };
@@ -153,95 +165,67 @@ document.getElementById('upload').addEventListener('change',function(e){
 
 // Delete
 function deleteObj(){
-    canvas.getActiveObjects().forEach(obj => canvas.remove(obj));
+    canvas.getActiveObjects().forEach(obj => {
+        if(obj !== printArea) canvas.remove(obj);
+    });
     canvas.discardActiveObject();
     canvas.renderAll();
-}
-
-// Layer Controls
-function bringForward(){
-    const obj = canvas.getActiveObject();
-    if(obj) canvas.bringForward(obj);
-}
-function sendBackward(){
-    const obj = canvas.getActiveObject();
-    if(obj) canvas.sendBackwards(obj);
-}
-
-// Background Color
-function changeBackground(){
-    canvas.setBackgroundColor(
-        document.getElementById('bgColor').value,
-        canvas.renderAll.bind(canvas)
-    );
 }
 
 // Download
 function download(){
     canvas.discardActiveObject();
     canvas.renderAll();
-    const link = document.createElement('a');
-    link.download = 'DIM_Design.png';
-    link.href = canvas.toDataURL({
-        format:'png',
-        multiplier:3
-    });
+    const link=document.createElement("a");
+    link.download="DIM_Design.png";
+    link.href=canvas.toDataURL({format:"png",multiplier:3});
     link.click();
 }
-const UNSPLASH_KEY = "Z-a_ubE9NWNeF8tLL7QM4LjHdrIW7_RE0ZHUWAUi_zU";
-const PEXELS_KEY = "P8Cir7evpy7BpcaUKsQJSxaNXmo9jz1XriQ3TqiHrwMYDRpiKxNlxe8c";
 
-async function searchImages() {
-    const query = document.getElementById("imageQuery").value;
-    const source = document.getElementById("imageSource").value;
-    const resultsDiv = document.getElementById("imageResults");
-    resultsDiv.innerHTML = "Loading...";
+// ✂️ Remove Background
+async function removeBackground(){
+    const obj=canvas.getActiveObject();
+    if(!obj || obj.type!=="image") return alert("Select an image");
 
-    try {
-        let images = [];
+    const base64=obj._element.src;
 
-        if (source === "unsplash") {
-            const url = `https://api.unsplash.com/search/photos?query=${query}&per_page=12&client_id=${UNSPLASH_KEY}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            images = data.results.map(p => p.urls.small);
-        }
+    const res=await fetch(`${BACKEND_URL}/api/removebg`,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({image:base64})
+    });
 
-        if (source === "pexels") {
-            const url = `https://api.pexels.com/v1/search?query=${query}&per_page=12`;
-            const res = await fetch(url, {
-                headers: { Authorization: PEXELS_KEY }
-            });
-            const data = await res.json();
-            images = data.photos.map(p => p.src.medium);
-        }
+    const data=await res.json();
 
-        resultsDiv.innerHTML = "";
+    fabric.Image.fromURL(data.url,function(img){
+        img.scaleToWidth(obj.width);
+        img.left=obj.left;
+        img.top=obj.top;
+        canvas.remove(obj);
+        canvas.add(img);
+    });
+}
 
-        images.forEach(url => {
-            const img = document.createElement("img");
-            img.src = url;
-            img.style.width = "60px";
-            img.style.cursor = "pointer";
+// 🎨 AI Generator
+async function generateAI(){
+    const prompt=document.getElementById("aiPrompt").value;
 
-            img.onclick = () => {
-                fabric.Image.fromURL(url, function(fImg) {
-                    fImg.scaleToWidth(200);
-                    canvas.add(fImg);
-                    canvas.renderAll();
-                }, { crossOrigin: 'anonymous' });
-            };
+    const res=await fetch(`${BACKEND_URL}/api/generate`,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({prompt})
+    });
 
-            resultsDiv.appendChild(img);
-        });
+    const data=await res.json();
 
-    } catch (error) {
-        console.error(error);
-        resultsDiv.innerHTML = "Error loading images";
-    }
+    fabric.Image.fromURL(data.url,function(img){
+        img.scaleToWidth(300);
+        img.left=200;
+        img.top=300;
+        canvas.add(img);
+    });
 }
 
 </script>
-
 </body>
 </html>
