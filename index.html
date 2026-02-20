@@ -88,7 +88,15 @@ D.I.M. Bright Ideas – Custom Print Studio
 
 <h3>Upload Logo</h3>
 <input type="file" id="upload" accept="image/*">
+<h3>Search Graphics</h3>
+<input type="text" id="imageQuery" placeholder="Search images...">
+<select id="imageSource">
+  <option value="unsplash">Unsplash</option>
+  <option value="pexels">Pexels</option>
+</select>
+<button onclick="searchImages()">Search</button>
 
+<div id="imageResults" style="display:flex;flex-wrap:wrap;gap:5px;max-height:200px;overflow:auto;"></div>
 <h3>Layers</h3>
 <button onclick="bringForward()">Bring Forward</button>
 <button onclick="sendBackward()">Send Backward</button>
@@ -179,6 +187,58 @@ function download(){
         multiplier:3
     });
     link.click();
+}
+const UNSPLASH_KEY = "Z-a_ubE9NWNeF8tLL7QM4LjHdrIW7_RE0ZHUWAUi_zU";
+const PEXELS_KEY = "P8Cir7evpy7BpcaUKsQJSxaNXmo9jz1XriQ3TqiHrwMYDRpiKxNlxe8c";
+
+async function searchImages() {
+    const query = document.getElementById("imageQuery").value;
+    const source = document.getElementById("imageSource").value;
+    const resultsDiv = document.getElementById("imageResults");
+    resultsDiv.innerHTML = "Loading...";
+
+    try {
+        let images = [];
+
+        if (source === "unsplash") {
+            const url = `https://api.unsplash.com/search/photos?query=${query}&per_page=12&client_id=${UNSPLASH_KEY}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            images = data.results.map(p => p.urls.small);
+        }
+
+        if (source === "pexels") {
+            const url = `https://api.pexels.com/v1/search?query=${query}&per_page=12`;
+            const res = await fetch(url, {
+                headers: { Authorization: PEXELS_KEY }
+            });
+            const data = await res.json();
+            images = data.photos.map(p => p.src.medium);
+        }
+
+        resultsDiv.innerHTML = "";
+
+        images.forEach(url => {
+            const img = document.createElement("img");
+            img.src = url;
+            img.style.width = "60px";
+            img.style.cursor = "pointer";
+
+            img.onclick = () => {
+                fabric.Image.fromURL(url, function(fImg) {
+                    fImg.scaleToWidth(200);
+                    canvas.add(fImg);
+                    canvas.renderAll();
+                }, { crossOrigin: 'anonymous' });
+            };
+
+            resultsDiv.appendChild(img);
+        });
+
+    } catch (error) {
+        console.error(error);
+        resultsDiv.innerHTML = "Error loading images";
+    }
 }
 
 </script>
