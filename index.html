@@ -1,101 +1,67 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Print Studio</title>
-    <style>
-        body { font-family: sans-serif; text-align: center; background: #f4f4f4; padding: 20px; }
-        .controls { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        #canvas-wrap { border: 3px solid #333; display: inline-block; background: white; }
-        #results { display: flex; gap: 10px; overflow-x: auto; margin: 10px auto; max-width: 600px; padding: 10px; background: #eee; border-radius: 5px; min-height: 80px; }
-        button { cursor: pointer; padding: 10px; margin: 5px; border: none; border-radius: 4px; background: #007bff; color: white; }
-        input { padding: 10px; width: 200px; border: 1px solid #ccc; border-radius: 4px; }
-    </style>
-</head>
-<body>
+<!-- Fabric.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
 
-    <div class="controls">
-        <input type="text" id="query" placeholder="Search for photos...">
-        <button onclick="searchUnsplash()">Search Unsplash</button>
-        <button onclick="addText()">Add Text</button>
-        <button onclick="deleteObj()" style="background: red;">Delete</button>
-        <button onclick="download()" style="background: green;">Download PNG</button>
-    </div>
+<script>
+const KEY = 'Z-a_ubE9NWNeF8tLL7QM4LjHdrIW7_RE0ZHUWAUi_zU';
 
-    <div id="results">Search results appear here...</div>
+let canvas;
 
-    <div id="canvas-wrap">
-        <canvas id="studio" width="600" height="400"></canvas>
-    </div>
+window.onload = function () {
+    canvas = new fabric.Canvas('studio');
+    console.log("Studio Ready!");
+};
 
-    <!-- LOAD THE LIBRARY LAST TO ENSURE DOM IS READY -->
-    <script src="https://cdnjs.cloudflare.com"></script>
+function addText() {
+    const t = new fabric.IText('Edit Me', { left: 50, top: 50 });
+    canvas.add(t);
+}
 
-    <script>
-        // 1. Paste your key here
-        const KEY = 'Z-a_ubE9NWNeF8tLL7QM4LjHdrIW7_RE0ZHUWAUi_zU';
+async function searchUnsplash() {
+    const q = document.getElementById('query').value;
+    const url = `https://api.unsplash.com/search/photos?query=${q}&client_id=${KEY}&per_page=6`;
 
-        var canvas;
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const tray = document.getElementById('results');
+        tray.innerHTML = '';
 
-        // This function waits for Fabric to load before starting the canvas
-        function initCanvas() {
-            if (typeof fabric !== 'undefined') {
-                canvas = new fabric.Canvas('studio');
-                console.log("Studio Ready!");
-            } else {
-                setTimeout(initCanvas, 100); // Try again in 0.1 seconds
-            }
-        }
-        initCanvas();
+        data.results.forEach(photo => {
+            const img = document.createElement('img');
+            img.src = photo.urls.thumb;
+            img.style.height = "70px";
+            img.style.cursor = "pointer";
 
-        function addText() {
-            if(!canvas) return;
-            var t = new fabric.IText('Edit Me', { left: 50, top: 50 });
-            canvas.add(t);
-        }
+            img.onclick = () => {
+                fabric.Image.fromURL(photo.urls.regular, function(fImg) {
+                    fImg.scaleToWidth(200);
+                    canvas.add(fImg);
+                    canvas.renderAll();
+                }, { crossOrigin: 'anonymous' });
+            };
 
-        async function searchUnsplash() {
-            const q = document.getElementById('query').value;
-            // FIXED URL: Removed the curly brackets around q
-            const url = `https://api.unsplash.com{q}&client_id=${KEY}&per_page=6`;
-            
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                const tray = document.getElementById('results');
-                tray.innerHTML = ''; 
+            tray.appendChild(img);
+        });
 
-                data.results.forEach(photo => {
-                    const img = document.createElement('img');
-                    img.src = photo.urls.thumb;
-                    img.style.height = "70px";
-                    img.style.cursor = "pointer";
-                    img.onclick = () => {
-                        fabric.Image.fromURL(photo.urls.regular, function(fImg) {
-                            fImg.scaleToWidth(200);
-                            canvas.add(fImg);
-                            canvas.renderAll();
-                        }, { crossOrigin: 'anonymous' });
-                    };
-                    tray.appendChild(img);
-                });
-            } catch (e) {
-                console.error("Search failed:", e);
-                alert("Check your internet or API key!");
-            }
-        }
+    } catch (e) {
+        console.error("Search failed:", e);
+        alert("Check your API key or hosting environment.");
+    }
+}
 
-        function deleteObj() {
-            canvas.getActiveObjects().forEach(obj => canvas.remove(obj));
-            canvas.discardActiveObject().renderAll();
-        }
+function deleteObj() {
+    const active = canvas.getActiveObjects();
+    active.forEach(obj => canvas.remove(obj));
+    canvas.discardActiveObject();
+    canvas.renderAll();
+}
 
-        function download() {
-            canvas.discardActiveObject().renderAll();
-            const link = document.createElement('a');
-            link.download = 'design.png';
-            link.href = canvas.toDataURL({ format: 'png', multiplier: 2 });
-            link.click();
-        }
-    </script>
-</body>
-</html>
+function download() {
+    canvas.discardActiveObject();
+    canvas.renderAll();
+    const link = document.createElement('a');
+    link.download = 'design.png';
+    link.href = canvas.toDataURL({ format: 'png', multiplier: 2 });
+    link.click();
+}
+</script>
